@@ -1,0 +1,15 @@
+{
+  "name": "Sample",
+  "version": "1.0.0",
+  "description": "Grading",
+  "main": "index.js",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "puppeteer": "^19.0.0",
+    "neat-csv": "5.1.0"
+  },
+  "scripts": {
+    "test": "node index.js"
+  }
+}
