@@ -51,14 +51,14 @@ const run = async () => {
   '--use-mock-keychain',
     ];
     
-    async function grade(username, link) {
-        console.log(username,link)
+    async function grade(username, link, data) {
+        console.log(username, link,data)
         const browser = await puppeteer.launch({headless: true, args: minimal_args})
         try {
             const page = await browser.newPage()
-            page.setDefaultTimeout(5 * 1000)
+            page.setDefaultTimeout(30 * 1000)
             await page.goto(link)
-            await page.screenshot({path: path.join(__dirname, `/image/${username}.png`), type: "png", fullPage:true});
+            // await page.screenshot({path: path.join(__dirname, `/image/${username}.png`), type: "png", fullPage:true});
             let grade = 0;
             const getElement = async (selector) => {
                 return await page.$(selector);
@@ -78,41 +78,26 @@ const run = async () => {
                 grade += 20;
             }
             // click the zuri button
-            if (await getElement("#btn__zuri")) {
-                await page.click('#btn__zuri');
+            const button = await getElement("#btn__zuri > a");
+            if (button) {
+                href = await (await button.getProperty("href")).jsonValue();
                 grade += 10;
-                try {
-                    await Promise.all([
-                        page.waitForNavigation(),
-                        page.click('#btn__zuri'),
-                    ]);
-                    if (page.url().includes("training.zuri.team")) {
-                        grade += 10;
-                        await page.goBack();
-                        // }
-                    }
-                } catch (e) {
-                    // ignore error
-                }
-                
-            }
-                
-            if (await getElement("#books")) {
-                grade += 10;
-                try {
-                    await Promise.all([
-                        page.waitForNavigation(),
-                        page.click('#books'),
-                    ]);
-                    if (page.url().includes("books.zuri.team")) {
-                        grade += 10;
-                        await page.goBack();
-                    }
-                } catch (e) {
-                    // igonre errror
+                if (href.includes("training.zuri.team")) {
+                    grade += 10;
                 }
             }
-            console.log(grade, username)
+            
+            const bookButton = await getElement("#books > a")
+            if (bookButton) {
+                href = await (await bookButton.getProperty("href")).jsonValue();
+                grade += 10;
+                if (href.includes("books.zuri.team")) {
+                    grade += 10;
+                }
+            }
+
+            
+           console.log(grade, username)
             if(grade >= 80){
                 passed.push(username)
             }else {
@@ -125,7 +110,7 @@ const run = async () => {
         await browser.close()
     }
 
-    await Promise.all(submissions.map(submission => grade(submission.username, submission.link)))
+    await Promise.all(submissions.map(submission => grade(submission.username, submission.link, submission)))
 
     fs.writeFileSync(passedPath, passed.join("\n"), 'utf8')
     fs.writeFileSync(failedPath, failed.join("\n"),'utf8');
